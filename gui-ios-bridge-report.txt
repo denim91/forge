@@ -1,0 +1,1 @@
+BRIDGE: 0 member redirects, 0 handle redirects, 0 serializable-lambda markers, 0 services entries remapped across 1 jar(s)
