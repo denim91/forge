@@ -8,6 +8,7 @@ name: iOS compatibility gate
 # a Mac.
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - '**/*.java'
@@ -48,6 +49,15 @@ jobs:
 
       - name: Run iOS compatibility audit
         run: bash forge-gui-ios/pipeline/ios-pipeline.sh audit
+
+      - name: Expose audit results as annotations
+        if: always()
+        run: |
+          for f in tmp/jvmdg/work/audit-report.txt tmp/jvmdg/work/gui-ios-bridge-report.txt tmp/jvmdg/work/bridge-report.txt; do
+            [ -f "$f" ] || continue
+            echo "::notice title=$(basename $f) head::$(head -1 "$f")"
+            grep -E 'AUDIT|<-|GATE-FAIL' "$f" | head -40 | while IFS= read -r l; do echo "::warning title=$(basename $f)::$l"; done
+          done
 
       - name: Upload transform reports
         if: always()
