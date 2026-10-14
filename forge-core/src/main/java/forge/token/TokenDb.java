@@ -36,7 +36,7 @@ public class TokenDb implements ITokenDatabase {
     private final CardEdition.Collection editions;
     private final Map<String, CardRules> rulesByName;
     // edition codes already reported as missing, so each is logged once
-    private final Set<String> missingEditions = ConcurrentHashMap.newKeySet();
+    private final Set<String> missingEditions = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     // null preserves first-alphabetical match; adventure pushes a filter here.
     private Predicate<CardEdition> defaultEditionFilter = null;

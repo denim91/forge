@@ -1,5 +1,6 @@
 package forge.screens.match.views;
 
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -390,8 +391,8 @@ public abstract class VCardDisplayArea extends VDisplayArea implements ActivateH
         private boolean hasFieldRect;
         private boolean leaveOriginLocked;
         private VCardDisplayArea lastFieldRow;
-        private static final Set<Integer> animatedIds = ConcurrentHashMap.newKeySet();
-        private static final Set<Integer> movedIds = ConcurrentHashMap.newKeySet();
+        private static final Set<Integer> animatedIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        private static final Set<Integer> movedIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
         public static void markMoved(CardView c) { movedIds.add(c.getId()); }
         public static Rectangle takeHandStart(CardView card) {
             return handStarts.remove(card.getId());
