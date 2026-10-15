@@ -243,6 +243,8 @@ public class Graphics implements Disposable {
             activeClip.set(minX, minY, maxX - minX, maxY - minY);
         }
 
+        // world y is offset from window y by the iOS bottom safe inset (see Forge.applySafeInsetsIfNeeded)
+        activeClip.y += Forge.getSafeBottomInset();
         if (!ScissorStack.pushScissors(activeClip)) {
             failedClipCount++; // tracked failed clips to prevent calling popScissors on endClip
             clipDepth--; // ScissorStack did not keep this slot, release it so the depth doesn't drift

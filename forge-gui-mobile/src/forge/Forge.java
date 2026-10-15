@@ -78,6 +78,12 @@ public class Forge implements ApplicationListener {
     private static IDeviceAdapter deviceAdapter;
     private static int screenWidth;
     private static int screenHeight;
+    // iOS: keep the classic UI out of the Dynamic Island / notch and home-indicator areas
+    private static int safeTopInset = 0, safeBottomInset = 0;
+    private static boolean safeInsetsApplied = false;
+    private static int safeInsetFrames = 0;
+    public static int getSafeTopInset() { return safeTopInset; }
+    public static int getSafeBottomInset() { return safeBottomInset; }
     private static Graphics graphics;
     private static FScreen currentScreen;
     private static ControllerListener controllerListener;
@@ -202,7 +208,7 @@ public class Forge implements ApplicationListener {
         }
         graphics = new Graphics(Forge.HIGH_SPRITES_CAP);
         splashScreen = new SplashScreen();
-        inputProcessor = new MainInputProcessor();
+        inputProcessor = GuiBase.isIOS() ? new SafeInsetInputProcessor(new MainInputProcessor()) : new MainInputProcessor();
 
         Gdx.input.setInputProcessor(inputProcessor);
         /*
@@ -932,6 +938,7 @@ public class Forge implements ApplicationListener {
 
     @Override
     public void render() {
+        applySafeInsetsIfNeeded();
         // prevent render if isDisposed
         if (isDisposed)
             return;
@@ -998,6 +1005,9 @@ public class Forge implements ApplicationListener {
 
     @Override
     public void resize(int width, int height) {
+        if (safeInsetsApplied && safeTopInset + safeBottomInset > 0) {
+            height = screenHeight;
+        }
         try {
             if (currentScreen != null) {
                 currentScreen.setSize(width, height);
@@ -1740,5 +1750,51 @@ public class Forge implements ApplicationListener {
 
     public static void setDesktopAutoOrientation(boolean auto) {
         desktopAutoOrientation = auto;
+    }
+
+    // iOS portrait: shrink the classic UI area so nothing is drawn under the Dynamic Island/notch
+    // or the home indicator. The camera keeps covering the whole backbuffer and is shifted so that
+    // world y=0 sits above the bottom inset; touches are shifted by the top inset to match.
+    private static void applySafeInsetsIfNeeded() {
+        if (safeInsetsApplied || !GuiBase.isIOS() || isMobileAdventureMode || camera == null) {
+            return;
+        }
+        int fullW = Gdx.graphics.getWidth(), fullH = Gdx.graphics.getHeight();
+        int top = Gdx.graphics.getSafeInsetTop();
+        if (fullH <= fullW || (top <= 0 && ++safeInsetFrames > 120)) {
+            safeInsetsApplied = true; // landscape, or a device without a top inset
+            return;
+        }
+        if (top <= 0) {
+            return; // insets not reported yet, retry next frame
+        }
+        safeInsetsApplied = true;
+        safeTopInset = top;
+        safeBottomInset = Math.max(0, Gdx.graphics.getSafeInsetBottom());
+        screenHeight = fullH - safeTopInset - safeBottomInset;
+        camera.setToOrtho(false, fullW, fullH);
+        camera.position.set(fullW / 2f, fullH / 2f - safeBottomInset, 0);
+        camera.update();
+        if (currentScreen != null) {
+            currentScreen.setSize(screenWidth, screenHeight);
+        }
+        if (splashScreen != null) {
+            splashScreen.setSize(screenWidth, screenHeight);
+        }
+    }
+
+    private static final class SafeInsetInputProcessor implements InputProcessor {
+        private final InputProcessor delegate;
+        SafeInsetInputProcessor(InputProcessor delegate0) { delegate = delegate0; }
+        private static int y(int screenY) { return screenY - safeTopInset; }
+        @Override public boolean keyDown(int keycode) { return delegate.keyDown(keycode); }
+        @Override public boolean keyUp(int keycode) { return delegate.keyUp(keycode); }
+        @Override public boolean keyTyped(char character) { return delegate.keyTyped(character); }
+        @Override public boolean touchDown(int x, int screenY, int pointer, int button) { return delegate.touchDown(x, y(screenY), pointer, button); }
+        @Override public boolean touchUp(int x, int screenY, int pointer, int button) { return delegate.touchUp(x, y(screenY), pointer, button); }
+        @Override public boolean touchCancelled(int x, int screenY, int pointer, int button) { return delegate.touchCancelled(x, y(screenY), pointer, button); }
+        @Override public boolean touchDragged(int x, int screenY, int pointer) { return delegate.touchDragged(x, y(screenY), pointer); }
+        @Override public boolean mouseMoved(int x, int screenY) { return delegate.mouseMoved(x, y(screenY)); }
+        @Override public boolean scrolled(float amountX, float amountY) { return delegate.scrolled(amountX, amountY); }
     }
 }
