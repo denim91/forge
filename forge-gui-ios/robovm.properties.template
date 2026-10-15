@@ -3,7 +3,7 @@ app.version=2.0.14
 app.id=@APP_ID@
 app.mainclass=forge.ios.Main
 app.executable=forge.ios.Main
-app.build=2
+app.build=3
 app.name=Forge
 
 # Set timezone before JVM initialization to avoid iOS sandbox violations.

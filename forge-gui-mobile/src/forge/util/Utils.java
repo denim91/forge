@@ -9,7 +9,12 @@ public class Utils {
     public static final float BASE_HEIGHT = 480f;
     private static final float SCREEN_WIDTH = (float)Gdx.graphics.getWidth();
     private static final float SCREEN_HEIGHT = (float)Gdx.graphics.getHeight();
-    private static final float HEIGHT_RATIO = SCREEN_HEIGHT / BASE_HEIGHT;
+    // iOS phones are much taller than the 2:3 base layout (19.5:9), so scaling by height alone
+    // makes text/controls too wide for the screen. Cap by the width ratio there; iPads and
+    // landscape are unaffected because the height ratio is already the smaller one.
+    private static final float HEIGHT_RATIO = forge.gui.GuiBase.isIOS()
+            ? Math.min(SCREEN_HEIGHT / BASE_HEIGHT, SCREEN_WIDTH / BASE_WIDTH)
+            : SCREEN_HEIGHT / BASE_HEIGHT;
 
     private static final float AVG_FINGER_SIZE_CM = 1.1f;
 
