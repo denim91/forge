@@ -1772,7 +1772,8 @@ public class Forge implements ApplicationListener {
         safeTopInset = top;
         safeBottomInset = Math.max(0, Gdx.graphics.getSafeInsetBottom());
         screenHeight = fullH - safeTopInset - safeBottomInset;
-        camera.setToOrtho(false, fullW, fullH);
+        camera.viewportWidth = fullW;
+        camera.viewportHeight = fullH;
         camera.position.set(fullW / 2f, fullH / 2f - safeBottomInset, 0);
         camera.update();
         if (currentScreen != null) {
